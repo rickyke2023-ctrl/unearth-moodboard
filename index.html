@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Serif+SC:wght@200;300;400;600&family=IBM+Plex+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <style>
   *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
   html,body{height:100%;overflow:hidden}
@@ -189,7 +190,6 @@
 
   <!-- MAGAZINE -->
   <section class="screen" id="magazine">
-    <div class="book-stage" id="bookStage"><div class="book" id="book"></div></div>
     <div class="mag-back" id="magBack">← 重选照片</div>
     <div class="dots" id="dots"></div>
     <div class="share-btn" id="shareBtn">成卡 · 分享</div>
@@ -380,111 +380,178 @@ function typePoem(txt){
     if(i<=txt.length){typeTimer=setTimeout(step,116);}else{poemEl.innerHTML=txt;poemDone=true;tapNext.classList.add('on');}})();
 }
 
-/* ---------- MAGAZINE: paper collage zine, 3D page-flip ---------- */
-const book=document.getElementById('book'),bookStage=document.getElementById('bookStage'),dots=document.getElementById('dots');
-let leaves=[],curIdx=0;
+/* ---------- MAGAZINE: liquid-glass living surface (WebGL) ---------- */
+const magScreen=document.getElementById('magazine'),dots=document.getElementById('dots');
+let three=null, plates=[], cur=0, transit=false, pd=null;
 
-function collage(i,sel,poem){
-  const plate=`PLATE ${String(i+1).padStart(2,'0')} · UNEARTH`;
-  const num=`${String(i+1).padStart(2,'0')} / ${String(pages.length).padStart(2,'0')}`;
-  const img=BIG(sel+1);
-  if(i%2===0){
-    return `<div class="c-block" style="left:7%;top:8%;width:48%;height:37%;transform:rotate(-4deg)"></div>
-      <div class="c-photo" style="left:13%;top:6%;width:64%;height:39%;transform:rotate(3deg)"><img src="${img}"></div>
-      <div class="c-tape" style="left:40%;top:3%;transform:rotate(-7deg)"></div>
-      <div class="c-ring" style="right:9%;top:40%;width:46px;height:46px"></div>
-      <div class="c-plate" style="left:13%;top:53%">${plate}</div>
-      <div class="c-line" style="left:13%;top:56.5%;width:24%"></div>
-      <div class="c-poem" style="left:13%;top:60%;width:74%;font-size:16px;line-height:1.85">${poem}</div>
-      <div class="c-num" style="right:8%;bottom:5%">${num}</div>`;
-  }
-  return `<div class="c-block" style="right:8%;top:9%;width:44%;height:35%;transform:rotate(3deg)"></div>
-      <div class="c-photo" style="right:12%;top:7%;width:62%;height:39%;transform:rotate(-3deg)"><img src="${img}"></div>
-      <div class="c-tape" style="right:36%;top:4%;transform:rotate(6deg)"></div>
-      <div class="c-ring" style="left:11%;top:42%;width:40px;height:40px"></div>
-      <div class="c-plate" style="left:13%;top:53%">${plate}</div>
-      <div class="c-line" style="left:13%;top:56.5%;width:24%"></div>
-      <div class="c-poem" style="left:13%;top:60%;width:74%;font-size:16px;line-height:1.85">${poem}</div>
-      <div class="c-num" style="right:8%;bottom:5%">${num}</div>`;
-}
-function buildMagazine(){
-  pages=selected.length?selected:[0];
-  book.innerHTML='';dots.innerHTML='';leaves=[];curIdx=0;
-  pages.forEach((sel,i)=>{
-    const leaf=document.createElement('div');leaf.className='leaf';
-    leaf.innerHTML=`<div class="face front"><div class="paper">${collage(i,sel,POEMS[i%POEMS.length])}</div></div><div class="face back"></div>`;
-    book.appendChild(leaf);leaves.push(leaf);
-    const d=document.createElement('i');if(i===0)d.className='on';dots.appendChild(d);
-  });
-  renderBook();
-}
-function renderBook(){
-  const N=leaves.length;
-  leaves.forEach((lf,i)=>{
-    const turned=i<curIdx;
-    lf.classList.remove('anim');
-    lf.style.transform=`rotateY(${turned?-180:0}deg)`;
-    lf.style.zIndex=turned?i:(N+(N-i));
-  });
-  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===curIdx));
-}
-
-/* paper rustle + haptic (iPhone-native hooks; subtle, can mute) */
+/* haptic + soft wet tick */
 let actx;
-function rustle(){
+function haptic(strength){
+  if(navigator.vibrate)try{navigator.vibrate(strength||9);}catch(e){}
   try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
-    const len=Math.floor(actx.sampleRate*0.16);
+    const len=Math.floor(actx.sampleRate*0.10);
     const buf=actx.createBuffer(1,len,actx.sampleRate);const ch=buf.getChannelData(0);
-    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.3);
+    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,3.0);
     const src=actx.createBufferSource();src.buffer=buf;
-    const hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=1600;
-    const g=actx.createGain();g.gain.value=0.05;
-    src.connect(hp);hp.connect(g);g.connect(actx.destination);src.start();
+    const bp=actx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=900;
+    const g=actx.createGain();g.gain.value=0.035;
+    src.connect(bp);bp.connect(g);g.connect(actx.destination);src.start();
   }catch(e){}
-  if(navigator.vibrate)try{navigator.vibrate(10);}catch(e){}
 }
 
-/* 3D flip — drag to follow finger, or tap left/right */
-function complete(lf,toDeg,after){
-  lf.classList.add('anim');requestAnimationFrame(()=>lf.style.transform=`rotateY(${toDeg}deg)`);
-  setTimeout(()=>{lf.classList.remove('anim');after&&after();renderBook();},600);
+/* ---- compose a "plate" canvas: photo + poem on void, feathered ---- */
+function drawCover(x,img,dx,dy,dw,dh){
+  const ir=img.width/img.height, rr=dw/dh; let sw,sh,sx,sy;
+  if(ir>rr){sh=img.height;sw=sh*rr;sx=(img.width-sw)/2;sy=0;}
+  else{sw=img.width;sh=sw/rr;sx=0;sy=(img.height-sh)/2;}
+  x.drawImage(img,sx,sy,sw,sh,dx,dy,dw,dh);
 }
-let drag=null;
-bookStage.addEventListener('pointerdown',e=>{
-  if(busy)return;const r=bookStage.getBoundingClientRect();
-  drag={x0:e.clientX,w:r.width,left:r.left,moved:0,active:null,p:0};
-});
-bookStage.addEventListener('pointermove',e=>{
-  if(!drag)return;const dx=e.clientX-drag.x0;drag.moved=dx;
-  if(dx<0&&curIdx<pages.length-1){
-    const lf=leaves[curIdx];lf.classList.remove('anim');lf.style.zIndex=999;
-    const p=Math.min(1,-dx/(drag.w*0.85));lf.style.transform=`rotateY(${-p*180}deg)`;drag.active='next';drag.p=p;
-  }else if(dx>0&&curIdx>0){
-    const lf=leaves[curIdx-1];lf.classList.remove('anim');lf.style.zIndex=999;
-    const p=Math.min(1,dx/(drag.w*0.85));lf.style.transform=`rotateY(${-180+p*180}deg)`;drag.active='prev';drag.p=p;
+async function ensureFont(){
+  try{await document.fonts.load('300 46px "Noto Serif SC"');await document.fonts.load('300 30px "Cormorant Garamond"');await document.fonts.ready;}catch(e){}
+}
+function makePlateCanvas(img,poem,i,W,H){
+  const c=document.createElement('canvas');c.width=W;c.height=H;const x=c.getContext('2d');
+  x.fillStyle='#0f0d0b';x.fillRect(0,0,W,H);
+  // photo region
+  const pw=W*0.80, ph=pw*1.04, px=(W-pw)/2, py=H*0.085;
+  x.save();x.beginPath();x.rect(px,py,pw,ph);x.clip();
+  drawCover(x,img,px,py,pw,ph);
+  // warm grade
+  x.fillStyle='rgba(232,199,120,.06)';x.fillRect(px,py,pw,ph);
+  x.restore();
+  // feather photo edges into void
+  const fg=x.createRadialGradient(W/2,py+ph/2,ph*0.30,W/2,py+ph/2,ph*0.62);
+  fg.addColorStop(0,'rgba(15,13,11,0)');fg.addColorStop(1,'#0f0d0b');
+  x.fillStyle=fg;x.fillRect(0,py-20,W,ph+40);
+  // gold rule
+  x.strokeStyle='rgba(232,199,120,.55)';x.lineWidth=2;
+  x.beginPath();x.moveTo(W/2-34,H*0.605);x.lineTo(W/2+34,H*0.605);x.stroke();
+  // plate label
+  x.fillStyle='rgba(155,143,125,.85)';x.textAlign='center';
+  x.font='400 20px "IBM Plex Mono", monospace';
+  x.fillText(`PLATE ${String(i+1).padStart(2,'0')}  ·  UNEARTH`, W/2, H*0.575);
+  // poem
+  x.fillStyle='#efe6d4';x.font='300 46px "Noto Serif SC", serif';
+  const lines=poem.split('\n');let ty=H*0.665;
+  lines.forEach(l=>{x.fillText(l,W/2,ty);ty+=H*0.052;});
+  return c;
+}
+async function loadImg(src){return new Promise((res,rej)=>{const im=new Image();im.crossOrigin='anonymous';im.onload=()=>res(im);im.onerror=rej;im.src=src;});}
+
+/* ---- shaders ---- */
+const VS=`varying vec2 vUv; void main(){vUv=uv; gl_Position=vec4(position.xy,0.0,1.0);}`;
+const FS=`precision highp float; varying vec2 vUv;
+uniform sampler2D uTex,uTexNext; uniform float uProgress,uTime,uAspect,uRipple; uniform vec2 uMouse;
+float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}
+float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.0-2.0*f);
+  float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));
+  return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}
+vec2 distort(vec2 uv){
+  vec2 d=uv-uMouse; d.x*=uAspect; float dist=length(d);
+  float lens=smoothstep(0.32,0.0,dist);
+  uv -= (uv-uMouse)*lens*0.17;                                  // 凹凸镜
+  float wave=sin(dist*36.0-uTime*3.2)*0.006*lens*(0.5+uRipple);
+  uv += normalize(d+1e-4)*wave;
+  uv += vec2(sin(uv.y*7.0+uTime*0.55),cos(uv.x*7.0+uTime*0.5))*0.0012; // idle liquid
+  return uv;
+}
+vec3 sampleCA(sampler2D t,vec2 uv,float ca){
+  return vec3(texture2D(t,uv+vec2(ca,0.0)).r,texture2D(t,uv).g,texture2D(t,uv-vec2(ca,0.0)).b);
+}
+void main(){
+  vec2 du=vUv-uMouse; du.x*=uAspect; float lens=smoothstep(0.32,0.0,length(du));
+  float ca=0.0045*lens+0.0007;
+  vec2 uv=distort(vUv);
+  vec3 col=sampleCA(uTex,uv,ca);
+  if(uProgress>0.001){
+    vec2 uv2=distort(vUv+vec2(0.0,(1.0-uProgress)*0.05));
+    vec3 nxt=sampleCA(uTexNext,uv2,ca);
+    float n=noise(vUv*4.0+uTime*0.1);
+    float m=smoothstep(uProgress-0.20, uProgress+0.20, vUv.x*0.7+n*0.5);
+    col=mix(nxt,col,m);
   }
-});
-bookStage.addEventListener('pointerup',e=>{
-  if(!drag)return;const d=drag;drag=null;
-  if(Math.abs(d.moved)<8){ // tap
-    const rel=(e.clientX-d.left)/d.w;
-    if(rel>0.5&&curIdx<pages.length-1){const lf=leaves[curIdx];lf.style.zIndex=999;rustle();complete(lf,-180,()=>curIdx++);}
-    else if(rel<=0.5&&curIdx>0){curIdx--;const lf=leaves[curIdx];lf.style.zIndex=999;rustle();complete(lf,0);}
-    return;
+  gl_FragColor=vec4(col,1.0);
+}`;
+
+function initThree(){
+  const r=magScreen.getBoundingClientRect();
+  const renderer=new THREE.WebGLRenderer({antialias:true,alpha:false});
+  renderer.setPixelRatio(Math.min(2,devicePixelRatio||1));
+  renderer.setSize(r.width,r.height);
+  const el=renderer.domElement;
+  el.style.cssText='position:absolute;inset:0;z-index:1;touch-action:none';
+  magScreen.insertBefore(el,magScreen.firstChild);
+  const scene=new THREE.Scene();
+  const cam=new THREE.Camera();
+  const mat=new THREE.ShaderMaterial({uniforms:{
+    uTex:{value:null},uTexNext:{value:null},uProgress:{value:0},
+    uMouse:{value:new THREE.Vector2(0.5,0.55)},uTime:{value:0},
+    uAspect:{value:r.width/r.height},uRipple:{value:0}
+  },vertexShader:VS,fragmentShader:FS});
+  scene.add(new THREE.Mesh(new THREE.PlaneGeometry(2,2),mat));
+  three={renderer,scene,cam,mat,el};
+  bindPointer(el);
+  requestAnimationFrame(renderLoop);
+  addEventListener('resize',resizeThree);
+}
+function resizeThree(){
+  if(!three)return;const r=magScreen.getBoundingClientRect();
+  three.renderer.setSize(r.width,r.height);
+  three.mat.uniforms.uAspect.value=r.width/r.height;
+}
+function renderLoop(now){
+  if(!three){return;}
+  const u=three.mat.uniforms; u.uTime.value=now/1000; u.uRipple.value*=0.93;
+  if(!pd&&magScreen.classList.contains('show')){
+    const t=now/1000;
+    u.uMouse.value.lerp(new THREE.Vector2(0.5+Math.sin(t*0.28)*0.22,0.52+Math.cos(t*0.22)*0.16),0.018);
   }
-  if(d.active==='next'){const lf=leaves[curIdx];
-    if(d.p>0.32){rustle();complete(lf,-180,()=>curIdx++);}else complete(lf,0);}
-  else if(d.active==='prev'){const lf=leaves[curIdx-1];
-    if(d.p>0.32){rustle();complete(lf,0,()=>curIdx--);}else complete(lf,-180);}
-  else renderBook();
-});
-bookStage.addEventListener('pointercancel',()=>{drag=null;renderBook();});
+  three.renderer.render(three.scene,three.cam);
+  requestAnimationFrame(renderLoop);
+}
+function setMouse(e){const r=three.el.getBoundingClientRect();
+  three.mat.uniforms.uMouse.value.set((e.clientX-r.left)/r.width,1.0-(e.clientY-r.top)/r.height);}
+function bindPointer(el){
+  el.addEventListener('pointerdown',e=>{pd={x:e.clientX,sw:false};setMouse(e);three.mat.uniforms.uRipple.value=1.0;haptic(7);});
+  el.addEventListener('pointermove',e=>{if(!pd&&!magScreen.classList.contains('show'))return;setMouse(e);
+    if(pd&&Math.abs(e.clientX-pd.x)>8)pd.sw=true;});
+  el.addEventListener('pointerup',e=>{if(pd&&pd.sw){const dx=e.clientX-pd.x;if(dx<-40)nextPlate();else if(dx>40)prevPlate();}pd=null;});
+  el.addEventListener('pointercancel',()=>pd=null);
+}
+function nextPlate(){if(transit||cur>=plates.length-1)return;goPlate(cur+1);}
+function prevPlate(){if(transit||cur<=0)return;goPlate(cur-1);}
+function goPlate(idx){
+  transit=true;const u=three.mat.uniforms;
+  u.uTexNext.value=plates[idx];u.uProgress.value=0;haptic(12);
+  const t0=performance.now(),dur=880;
+  (function step(now){const k=Math.min(1,(now-t0)/dur);
+    u.uProgress.value=k<0?0:(k*k*(3.0-2.0*k));
+    if(k<1)requestAnimationFrame(step);
+    else{u.uTex.value=plates[idx];u.uProgress.value=0;cur=idx;updateDots();transit=false;}})(t0);
+}
+function buildDots(){dots.innerHTML='';pages.forEach((_,i)=>{const d=document.createElement('i');if(i===0)d.className='on';dots.appendChild(d);});}
+function updateDots(){[...dots.children].forEach((d,i)=>d.classList.toggle('on',i===cur));}
+
+async function buildMagazine(){
+  pages=selected.length?selected:[0];
+  await ensureFont();
+  if(!three)initThree();
+  const r=magScreen.getBoundingClientRect();
+  const W=720, H=Math.round(720*r.height/r.width);
+  const imgs=await Promise.all(pages.map(sel=>loadImg(BIG(sel+1)).catch(()=>null)));
+  plates=imgs.map((im,i)=>{
+    const cn=im?makePlateCanvas(im,POEMS[i%POEMS.length],i,W,H):document.createElement('canvas');
+    const tx=new THREE.CanvasTexture(cn);tx.minFilter=THREE.LinearFilter;tx.needsUpdate=true;return tx;
+  });
+  cur=0;three.mat.uniforms.uTex.value=plates[0];three.mat.uniforms.uProgress.value=0;
+  buildDots();resizeThree();
+}
 
 /* share card (dada) */
 const shareModal=document.getElementById('shareModal');
 document.getElementById('shareBtn').onclick=()=>{
-  document.getElementById('dImg').src=BIG((pages[curIdx]??0)+1);
-  document.getElementById('dPoem').textContent=POEMS[curIdx%POEMS.length];
+  document.getElementById('dImg').src=BIG((pages[cur]??0)+1);
+  document.getElementById('dPoem').textContent=POEMS[cur%POEMS.length];
   shareModal.classList.add('show');
 };
 document.getElementById('magBack').onclick=()=>{shareModal.classList.remove('show');go('picker',buildGrid);};
