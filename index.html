@@ -88,20 +88,32 @@
   .tap-next{position:absolute;bottom:34px;left:0;right:0;text-align:center;font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;color:var(--ink);opacity:0;transition:opacity .6s}
   .tap-next.on{animation:breathe 3s ease-in-out infinite}
 
-  /* MAGAZINE — full-screen paginated, international */
-  #magazine{padding:0;display:none}
+  /* MAGAZINE — paper collage zine, 3D page-flip */
+  #magazine{padding:0;display:none;background:radial-gradient(72% 52% at 50% 42%, rgba(232,199,120,.06), transparent 70%), var(--bg)}
   #magazine.show{display:block}
-  .pager{position:absolute;inset:0;display:flex;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none}
-  .pager::-webkit-scrollbar{display:none}
-  .page{position:relative;min-width:100%;height:100%;scroll-snap-align:start;display:flex;flex-direction:column;background:var(--bg)}
-  .page .pimg{width:100%;height:60%;object-fit:cover}
-  .page .pimgwrap{position:relative;width:100%;height:60%;overflow:hidden}
-  .page .pimgwrap::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 60%,var(--bg))}
-  .page .pbody{flex:1;position:relative;padding:26px 30px 0}
-  .page .pnum{position:absolute;top:54px;right:26px;z-index:3;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.24em;color:var(--gold);opacity:.8}
-  .page .prule{width:34px;height:1px;background:var(--accent);margin-bottom:18px}
-  .page .ppoem{font-family:var(--display);font-weight:300;font-size:22px;line-height:1.95;letter-spacing:.04em;color:var(--paper);white-space:pre-line}
-  .page .pcap{position:absolute;left:30px;bottom:118px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.22em;color:var(--ink);opacity:.65}
+  .book-stage{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;perspective:1700px;touch-action:none}
+  .book{position:relative;width:84%;max-width:360px;aspect-ratio:3/4.05;transform-style:preserve-3d;transform:rotateX(4deg)}
+  .book::before{content:"";position:absolute;top:1.5%;left:-7px;width:11px;height:97%;z-index:0;
+    background:repeating-linear-gradient(180deg,#d8ccb4,#d8ccb4 1px,#b9aa8c 1px,#b9aa8c 3px);
+    border-radius:2px 0 0 2px;box-shadow:-4px 8px 18px rgba(0,0,0,.55)}
+  .leaf{position:absolute;inset:0;transform-origin:left center;transform-style:preserve-3d;will-change:transform}
+  .leaf.anim{transition:transform .62s cubic-bezier(.42,0,.2,1)}
+  .face{position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:2px 7px 7px 2px;overflow:hidden;box-shadow:0 20px 55px rgba(0,0,0,.5)}
+  .face.back{transform:rotateY(180deg);background:linear-gradient(135deg,#e7dcc6,#d8cbb0)}
+  .paper{position:absolute;inset:0;background:#ece1cc}
+  .paper::after{content:"";position:absolute;inset:0;opacity:.55;mix-blend-mode:multiply;pointer-events:none;
+    background:radial-gradient(118% 88% at 28% 18%, transparent 58%, rgba(120,100,70,.20)),
+              linear-gradient(90deg, rgba(90,70,45,.10), transparent 12%)}
+  .c-block{position:absolute;background:var(--accent);opacity:.9}
+  .c-ring{position:absolute;border:2px solid var(--gold);border-radius:50%}
+  .c-line{position:absolute;height:2px;background:#2a2018}
+  .c-photo{position:absolute;background:#fbf7ee;padding:7px;box-shadow:0 12px 24px rgba(0,0,0,.34)}
+  .c-photo img{display:block;width:100%;height:100%;object-fit:cover}
+  .c-tape{position:absolute;width:48px;height:18px;background:rgba(232,199,120,.42);box-shadow:0 1px 3px rgba(0,0,0,.16)}
+  .c-plate{position:absolute;font-family:"IBM Plex Mono",monospace;font-size:8px;letter-spacing:.26em;color:#9a8463}
+  .c-poem{position:absolute;font-family:var(--display);font-weight:400;color:#241a12;white-space:pre-line}
+  .c-num{position:absolute;font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.2em;color:#8a7558}
   .dots{position:absolute;bottom:96px;left:0;right:0;display:flex;gap:7px;justify-content:center;z-index:5;pointer-events:none}
   .dots i{width:5px;height:5px;border-radius:50%;background:rgba(232,199,120,.25);transition:.3s}
   .dots i.on{background:var(--gold);transform:scale(1.3)}
@@ -177,7 +189,7 @@
 
   <!-- MAGAZINE -->
   <section class="screen" id="magazine">
-    <div class="pager" id="pager"></div>
+    <div class="book-stage" id="bookStage"><div class="book" id="book"></div></div>
     <div class="mag-back" id="magBack">← 重选照片</div>
     <div class="dots" id="dots"></div>
     <div class="share-btn" id="shareBtn">成卡 · 分享</div>
@@ -368,34 +380,111 @@ function typePoem(txt){
     if(i<=txt.length){typeTimer=setTimeout(step,116);}else{poemEl.innerHTML=txt;poemDone=true;tapNext.classList.add('on');}})();
 }
 
-/* ---------- MAGAZINE: full-screen paginated ---------- */
-const pager=document.getElementById('pager'),dots=document.getElementById('dots');
+/* ---------- MAGAZINE: paper collage zine, 3D page-flip ---------- */
+const book=document.getElementById('book'),bookStage=document.getElementById('bookStage'),dots=document.getElementById('dots');
+let leaves=[],curIdx=0;
+
+function collage(i,sel,poem){
+  const plate=`PLATE ${String(i+1).padStart(2,'0')} · UNEARTH`;
+  const num=`${String(i+1).padStart(2,'0')} / ${String(pages.length).padStart(2,'0')}`;
+  const img=BIG(sel+1);
+  if(i%2===0){
+    return `<div class="c-block" style="left:7%;top:8%;width:48%;height:37%;transform:rotate(-4deg)"></div>
+      <div class="c-photo" style="left:13%;top:6%;width:64%;height:39%;transform:rotate(3deg)"><img src="${img}"></div>
+      <div class="c-tape" style="left:40%;top:3%;transform:rotate(-7deg)"></div>
+      <div class="c-ring" style="right:9%;top:40%;width:46px;height:46px"></div>
+      <div class="c-plate" style="left:13%;top:53%">${plate}</div>
+      <div class="c-line" style="left:13%;top:56.5%;width:24%"></div>
+      <div class="c-poem" style="left:13%;top:60%;width:74%;font-size:16px;line-height:1.85">${poem}</div>
+      <div class="c-num" style="right:8%;bottom:5%">${num}</div>`;
+  }
+  return `<div class="c-block" style="right:8%;top:9%;width:44%;height:35%;transform:rotate(3deg)"></div>
+      <div class="c-photo" style="right:12%;top:7%;width:62%;height:39%;transform:rotate(-3deg)"><img src="${img}"></div>
+      <div class="c-tape" style="right:36%;top:4%;transform:rotate(6deg)"></div>
+      <div class="c-ring" style="left:11%;top:42%;width:40px;height:40px"></div>
+      <div class="c-plate" style="left:13%;top:53%">${plate}</div>
+      <div class="c-line" style="left:13%;top:56.5%;width:24%"></div>
+      <div class="c-poem" style="left:13%;top:60%;width:74%;font-size:16px;line-height:1.85">${poem}</div>
+      <div class="c-num" style="right:8%;bottom:5%">${num}</div>`;
+}
 function buildMagazine(){
   pages=selected.length?selected:[0];
-  pager.innerHTML='';dots.innerHTML='';
+  book.innerHTML='';dots.innerHTML='';leaves=[];curIdx=0;
   pages.forEach((sel,i)=>{
-    const poem=POEMS[i%POEMS.length];
-    const pg=document.createElement('div');pg.className='page';
-    pg.innerHTML=`
-      <div class="pnum">${String(i+1).padStart(2,'0')} / ${String(pages.length).padStart(2,'0')}</div>
-      <div class="pimgwrap"><img class="pimg" src="${BIG(sel+1)}" alt=""></div>
-      <div class="pbody"><div class="prule"></div><div class="ppoem">${poem}</div></div>
-      <div class="pcap">UNEARTH · ON-DEVICE · 06.04</div>`;
-    pager.appendChild(pg);
+    const leaf=document.createElement('div');leaf.className='leaf';
+    leaf.innerHTML=`<div class="face front"><div class="paper">${collage(i,sel,POEMS[i%POEMS.length])}</div></div><div class="face back"></div>`;
+    book.appendChild(leaf);leaves.push(leaf);
     const d=document.createElement('i');if(i===0)d.className='on';dots.appendChild(d);
   });
-  pager.scrollLeft=0;
+  renderBook();
 }
-pager.onscroll=()=>{
-  const idx=Math.round(pager.scrollLeft/pager.clientWidth);
-  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===idx));
-};
-/* share card */
+function renderBook(){
+  const N=leaves.length;
+  leaves.forEach((lf,i)=>{
+    const turned=i<curIdx;
+    lf.classList.remove('anim');
+    lf.style.transform=`rotateY(${turned?-180:0}deg)`;
+    lf.style.zIndex=turned?i:(N+(N-i));
+  });
+  [...dots.children].forEach((d,i)=>d.classList.toggle('on',i===curIdx));
+}
+
+/* paper rustle + haptic (iPhone-native hooks; subtle, can mute) */
+let actx;
+function rustle(){
+  try{actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const len=Math.floor(actx.sampleRate*0.16);
+    const buf=actx.createBuffer(1,len,actx.sampleRate);const ch=buf.getChannelData(0);
+    for(let i=0;i<len;i++)ch[i]=(Math.random()*2-1)*Math.pow(1-i/len,2.3);
+    const src=actx.createBufferSource();src.buffer=buf;
+    const hp=actx.createBiquadFilter();hp.type='highpass';hp.frequency.value=1600;
+    const g=actx.createGain();g.gain.value=0.05;
+    src.connect(hp);hp.connect(g);g.connect(actx.destination);src.start();
+  }catch(e){}
+  if(navigator.vibrate)try{navigator.vibrate(10);}catch(e){}
+}
+
+/* 3D flip — drag to follow finger, or tap left/right */
+function complete(lf,toDeg,after){
+  lf.classList.add('anim');requestAnimationFrame(()=>lf.style.transform=`rotateY(${toDeg}deg)`);
+  setTimeout(()=>{lf.classList.remove('anim');after&&after();renderBook();},600);
+}
+let drag=null;
+bookStage.addEventListener('pointerdown',e=>{
+  if(busy)return;const r=bookStage.getBoundingClientRect();
+  drag={x0:e.clientX,w:r.width,left:r.left,moved:0,active:null,p:0};
+});
+bookStage.addEventListener('pointermove',e=>{
+  if(!drag)return;const dx=e.clientX-drag.x0;drag.moved=dx;
+  if(dx<0&&curIdx<pages.length-1){
+    const lf=leaves[curIdx];lf.classList.remove('anim');lf.style.zIndex=999;
+    const p=Math.min(1,-dx/(drag.w*0.85));lf.style.transform=`rotateY(${-p*180}deg)`;drag.active='next';drag.p=p;
+  }else if(dx>0&&curIdx>0){
+    const lf=leaves[curIdx-1];lf.classList.remove('anim');lf.style.zIndex=999;
+    const p=Math.min(1,dx/(drag.w*0.85));lf.style.transform=`rotateY(${-180+p*180}deg)`;drag.active='prev';drag.p=p;
+  }
+});
+bookStage.addEventListener('pointerup',e=>{
+  if(!drag)return;const d=drag;drag=null;
+  if(Math.abs(d.moved)<8){ // tap
+    const rel=(e.clientX-d.left)/d.w;
+    if(rel>0.5&&curIdx<pages.length-1){const lf=leaves[curIdx];lf.style.zIndex=999;rustle();complete(lf,-180,()=>curIdx++);}
+    else if(rel<=0.5&&curIdx>0){curIdx--;const lf=leaves[curIdx];lf.style.zIndex=999;rustle();complete(lf,0);}
+    return;
+  }
+  if(d.active==='next'){const lf=leaves[curIdx];
+    if(d.p>0.32){rustle();complete(lf,-180,()=>curIdx++);}else complete(lf,0);}
+  else if(d.active==='prev'){const lf=leaves[curIdx-1];
+    if(d.p>0.32){rustle();complete(lf,0,()=>curIdx--);}else complete(lf,-180);}
+  else renderBook();
+});
+bookStage.addEventListener('pointercancel',()=>{drag=null;renderBook();});
+
+/* share card (dada) */
 const shareModal=document.getElementById('shareModal');
 document.getElementById('shareBtn').onclick=()=>{
-  const idx=Math.round(pager.scrollLeft/pager.clientWidth);
-  document.getElementById('dImg').src=BIG((pages[idx]??0)+1);
-  document.getElementById('dPoem').textContent=POEMS[idx%POEMS.length];
+  document.getElementById('dImg').src=BIG((pages[curIdx]??0)+1);
+  document.getElementById('dPoem').textContent=POEMS[curIdx%POEMS.length];
   shareModal.classList.add('show');
 };
 document.getElementById('magBack').onclick=()=>{shareModal.classList.remove('show');go('picker',buildGrid);};
