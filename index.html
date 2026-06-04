@@ -138,8 +138,8 @@
   @keyframes blink{50%{opacity:0}}
   .tap-next{position:absolute;bottom:34px;left:0;right:0;text-align:center;
     font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;color:var(--ink);
-    opacity:0;transition:.6s;animation:breathe 3s ease-in-out infinite}
-  .tap-next.on{opacity:.7}
+    opacity:0;transition:opacity .6s}
+  .tap-next.on{animation:breathe 3s ease-in-out infinite}
 
   /* MAGAZINE */
   #magazine{align-items:center;justify-content:center;padding:60px 30px 40px}
@@ -333,6 +333,7 @@ function loop(now){
   }
   // companion sprite
   if(document.getElementById('companion').classList.contains('show')&&cctx){
+    if(cw<2)fitC();
     cctx.clearRect(0,0,cw,ch);(sprites[theme]||sprites.kandinsky)(cctx,t);
   }
   requestAnimationFrame(loop);
@@ -375,7 +376,7 @@ async function go(id,prep){
 }
 
 /* welcome -> companion */
-screenEl('welcome').onclick=()=>go('companion');
+screenEl('welcome').onclick=()=>go('companion',fitC);
 /* companion -> picker */
 screenEl('companion').onclick=()=>go('picker',buildGrid);
 /* generating tap -> magazine (only after poem done) */
