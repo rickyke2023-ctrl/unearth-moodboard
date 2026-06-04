@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UnearthPoem · 视觉语言三档</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Serif+SC:wght@300;400;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --void:#0c0a08;
+    --void2:#15110c;
+    --cream:#efe6d4;
+    --gold:#e8c778;
+    --rust:#c2683f;
+    --clay:#b98a5e;
+    --ink:#9b8f7d;
+    --line:rgba(232,199,120,.16);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(232,199,120,.07), transparent 60%),
+      radial-gradient(90% 60% at 50% 110%, rgba(194,104,63,.06), transparent 60%),
+      var(--void);
+    color:var(--cream);
+    font-family:"Noto Serif SC","Cormorant Garamond",serif;
+    min-height:100vh;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  /* grain */
+  body::after{
+    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.045;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    mix-blend-mode:overlay;
+  }
+
+  header.intro{
+    max-width:1180px;margin:0 auto;padding:70px 32px 30px;
+  }
+  .kicker{
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.42em;
+    text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:22px;
+  }
+  h1{
+    font-family:"Cormorant Garamond",serif;font-weight:300;
+    font-size:clamp(34px,5vw,62px);line-height:1.04;letter-spacing:.01em;
+    color:var(--cream);margin-bottom:18px;
+  }
+  h1 em{font-style:italic;color:var(--gold)}
+  .lede{
+    font-weight:300;font-size:clamp(15px,1.5vw,18px);line-height:1.85;
+    color:var(--ink);max-width:680px;
+  }
+  .lede b{color:var(--clay);font-weight:400}
+  .axis{
+    display:flex;align-items:center;gap:16px;margin-top:30px;
+    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;color:var(--ink);
+  }
+  .axis .track{flex:1;height:1px;background:linear-gradient(90deg,var(--clay),var(--gold));max-width:320px;position:relative}
+  .axis .track::before,.axis .track::after{content:"";position:absolute;top:-2px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
+  .axis .track::before{left:0}.axis .track::after{right:0}
+
+  .grid{
+    max-width:1180px;margin:0 auto;padding:40px 24px 30px;
+    display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
+  }
+  @media(max-width:880px){.grid{grid-template-columns:1fr;gap:34px}}
+
+  .panel{
+    position:relative;border:1px solid var(--line);border-radius:14px;
+    background:linear-gradient(180deg,rgba(255,255,255,.014),rgba(0,0,0,.12));
+    overflow:hidden;display:flex;flex-direction:column;
+    transition:transform .5s cubic-bezier(.2,.7,.2,1),border-color .5s;
+  }
+  .panel:hover{transform:translateY(-4px);border-color:rgba(232,199,120,.34)}
+
+  .stage{position:relative;aspect-ratio:4/5;width:100%;background:radial-gradient(80% 70% at 50% 42%,rgba(232,199,120,.05),transparent 70%)}
+  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+
+  .meta{padding:22px 22px 26px;border-top:1px solid var(--line)}
+  .idx{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.3em;color:var(--gold);opacity:.65}
+  .pname{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:27px;letter-spacing:.01em;color:var(--cream);margin:9px 0 3px}
+  .pcn{font-size:14px;color:var(--clay);letter-spacing:.16em;margin-bottom:14px}
+  .soul{font-weight:300;font-size:14px;line-height:1.8;color:var(--ink);min-height:76px}
+  .swatch{display:flex;gap:7px;margin:18px 0 16px}
+  .swatch span{width:26px;height:26px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
+  .meter{display:flex;gap:5px;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;color:var(--ink);text-transform:uppercase}
+  .dot{width:7px;height:7px;border-radius:50%;background:rgba(232,199,120,.18)}
+  .dot.on{background:var(--gold)}
+  .tag{margin-top:16px;display:flex;flex-direction:column;gap:7px}
+  .tag div{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;color:var(--ink);line-height:1.5}
+  .tag b{color:var(--clay);font-weight:400}
+
+  .foot{max-width:1180px;margin:0 auto;padding:24px 32px 90px}
+  .principle{border-top:1px solid var(--line);padding-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
+  @media(max-width:880px){.principle{grid-template-columns:1fr;gap:24px}}
+  .principle h3{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);opacity:.75;margin-bottom:16px}
+  .principle p{font-weight:300;font-size:15px;line-height:1.9;color:var(--ink)}
+  .principle p b{color:var(--cream);font-weight:400}
+  .sig{margin-top:40px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.2em;color:var(--ink);opacity:.5}
+</style>
+</head>
+<body>
+
+<header class="intro">
+  <div class="kicker">Unearth&nbsp;·&nbsp;Visual Language Study</div>
+  <h1>三种<em>温暖的抽象</em><br>同一个灵魂，不同的胆量</h1>
+  <p class="lede">
+    用户导进来的，是他自己的照片——<b>那张照片本身就是最具象、最有温度的东西</b>。
+    所以 app 的外壳不必再去扮演具象，它的职责是当一个<b>温暖的抽象舞台</b>，把记忆托起、显影。
+    下面三档：温度恒定，抽象程度从左到右递进。看哪一格，开始从「邀请」变成「看不懂」。
+  </p>
+  <div class="axis">
+    <span>具象 · 安全</span>
+    <div class="track"></div>
+    <span>纯抽象 · 大胆</span>
+  </div>
+</header>
+
+<section class="grid">
+
+  <!-- A -->
+  <article class="panel">
+    <div class="stage"><canvas data-mode="bauhaus"></canvas></div>
+    <div class="meta">
+      <div class="idx">DIRECTION 01</div>
+      <div class="pname">Soft Bauhaus</div>
+      <div class="pcn">暖几何 · 柔包豪斯</div>
+      <div class="soul">圆、弧、柔方——能被一眼认出的原始几何，在暖金与陶土里缓缓呼吸。最像一份「礼物」，谁都不会被劝退。代价：差异化最弱，离烂大街最近。</div>
+      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#e8c778"></span><span style="background:#b98a5e"></span><span style="background:#7d5a3c"></span></div>
+      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
+      <div class="tag">
+        <div><b>触达</b> 最高·最安全·最暖</div>
+        <div><b>显影</b> 一个柔光圈缓缓张开，托住照片</div>
+        <div><b>风险</b> 不够独特，记忆点弱</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- B -->
+  <article class="panel">
+    <div class="stage"><canvas data-mode="kandinsky"></canvas></div>
+    <div class="meta">
+      <div class="idx">DIRECTION 02</div>
+      <div class="pname">Lyrical Abstraction</div>
+      <div class="pcn">康定斯基 · 抒情抽象</div>
+      <div class="soul">点、线、弧、同心圆，像乐谱一样动态编排。一个元素当「指挥」，手势般摆动——这正是精灵该有的样子：不是脸，是有生命的几何手势。暖而有情绪，独特又不冷。</div>
+      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#e8c778"></span><span style="background:#c2683f"></span><span style="background:#3f7d78"></span></div>
+      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div>
+      <div class="tag">
+        <div><b>触达</b> 高·情感可读·有记忆点</div>
+        <div><b>显影</b> 散乱的形聚拢、解析成画框</div>
+        <div><b>风险</b> 需要克制，否则会乱</div>
+      </div>
+    </div>
+  </article>
+
+  <!-- C -->
+  <article class="panel">
+    <div class="stage"><canvas data-mode="dada"></canvas></div>
+    <div class="meta">
+      <div class="idx">DIRECTION 03</div>
+      <div class="pname">Dada Futurism</div>
+      <div class="pcn">达达 · 未来抽象</div>
+      <div class="soul">大胆、不对称、出其不意的并置，一道果断的「切」划过画面。最像画廊、最独特、最有未来感——也最冒险：普通人可能觉得酷，也可能觉得「这是啥」。你爱的半圆斜切，活在这里。</div>
+      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#d98a3c"></span><span style="background:#a8431f"></span><span style="background:#2a2018"></span></div>
+      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
+      <div class="tag">
+        <div><b>触达</b> 较窄·靠酷感拉小红书</div>
+        <div><b>显影</b> 一道斜切扫过，照片被「裁」出来</div>
+        <div><b>风险</b> 大众理解门槛最高</div>
+      </div>
+    </div>
+  </article>
+
+</section>
+
+<footer class="foot">
+  <div class="principle">
+    <div>
+      <h3>为什么三档都成立</h3>
+      <p>劝退普通人的从来不是「抽象」，是「冷」。瑞士国际主义是抽象+冷；康定斯基/包豪斯/达达是抽象+暖。<b>这三档温度都恒定地暖</b>，只是大胆程度不同。普通人不需要「读懂」视觉语言，只需要「感受到」美和温度——情感可读，不是智识可读。</p>
+    </div>
+    <div>
+      <h3>共同的底层逻辑</h3>
+      <p><b>照片承担具象的情感，app 承担抽象的几何，各司其职。</b>用户看的是自己的照片和那首诗，不是来理解康定斯基。所以外壳越抽象越安全——因为情感锚点已经由用户自己提供了。三档的「显影」和「过渡」都从各自的几何语言里长出来，不再是字面拍立得。</p>
+    </div>
+  </div>
+  <div class="sig">UnearthPoem · 选一档作地基 · 定了即重建美学库 + 重设入场/精灵/过渡/卡片</div>
+</footer>
+
+<script>
+const TAU=Math.PI*2;
+function fit(cv){const d=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();cv.width=r.width*d;cv.height=r.height*d;const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return {w:r.width,h:r.height,ctx:x};}
+
+// shared photo placeholder (a warm "memory")
+function memory(ctx,cx,cy,s,t){
+  const g=ctx.createLinearGradient(cx-s,cy-s,cx+s,cy+s);
+  g.addColorStop(0,'#caa06a');g.addColorStop(.55,'#9c6b4c');g.addColorStop(1,'#5d4436');
+  ctx.save();ctx.translate(cx,cy);ctx.beginPath();
+  const r=s*.12;rrect(ctx,-s,-s,s*2,s*2,r);ctx.fillStyle=g;ctx.fill();
+  const hl=ctx.createRadialGradient(-s*.4,-s*.5,2,-s*.4,-s*.5,s*1.4);
+  hl.addColorStop(0,'rgba(255,255,255,.18)');hl.addColorStop(1,'transparent');
+  ctx.fillStyle=hl;ctx.fill();ctx.restore();
+}
+function rrect(c,x,y,w,h,r){c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
+
+const renders={
+  // 01 — Soft Bauhaus: warm primary shapes orbit & breathe around the memory
+  bauhaus(ctx,w,h,t){
+    const cx=w/2,cy=h*.43;
+    const br=1+Math.sin(t*0.9)*0.04;
+    // soft halo
+    const halo=ctx.createRadialGradient(cx,cy,0,cx,cy,w*.5);
+    halo.addColorStop(0,'rgba(232,199,120,.10)');halo.addColorStop(1,'transparent');
+    ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
+    // orbiting shapes (behind)
+    const orb=[{a:0.0,col:'#e8c778',k:'circle',sz:.16},{a:2.1,col:'#b98a5e',k:'arc',sz:.2},{a:4.2,col:'#efe6d4',k:'square',sz:.12}];
+    orb.forEach((o,i)=>{
+      const ang=t*0.25+o.a, R=w*0.31;
+      const x=cx+Math.cos(ang)*R, y=cy+Math.sin(ang)*R*0.8;
+      ctx.save();ctx.translate(x,y);ctx.globalAlpha=.9;
+      if(o.k==='circle'){ctx.beginPath();ctx.arc(0,0,w*o.sz*br,0,TAU);ctx.fillStyle=o.col;ctx.fill();}
+      if(o.k==='square'){ctx.rotate(ang*0.4);ctx.beginPath();rrect(ctx,-w*o.sz,-w*o.sz,w*o.sz*2,w*o.sz*2,w*0.04);ctx.fillStyle=o.col;ctx.fill();}
+      if(o.k==='arc'){ctx.lineWidth=w*0.05;ctx.strokeStyle=o.col;ctx.beginPath();ctx.arc(0,0,w*o.sz,ang,ang+Math.PI*1.1);ctx.stroke();}
+      ctx.restore();
+    });
+    memory(ctx,cx,cy,w*0.2*br,t);
+  },
+
+  // 02 — Kandinsky: musical composition, a swinging "conductor" line, concentric pulses
+  kandinsky(ctx,w,h,t){
+    const cx=w*0.5,cy=h*0.43;
+    // concentric pulses
+    for(let i=0;i<4;i++){
+      const ph=(t*0.5+i*0.7)%2.6;const rr=ph/2.6;
+      ctx.beginPath();ctx.arc(w*0.32,h*0.3,w*0.05+rr*w*0.34,0,TAU);
+      ctx.strokeStyle=`rgba(232,199,120,${(1-rr)*0.4})`;ctx.lineWidth=1.2;ctx.stroke();
+    }
+    // radiating rays
+    ctx.save();ctx.translate(w*0.7,h*0.62);
+    for(let i=0;i<7;i++){const a=i/7*TAU+t*0.15;ctx.strokeStyle='rgba(194,104,63,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*w*0.18,Math.sin(a)*w*0.18);ctx.stroke();}
+    ctx.restore();
+    // the memory tile, slightly rotated
+    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.sin(t*0.4)*0.04);memory(ctx,0,0,w*0.17,t);ctx.restore();
+    // bold sweeping arc
+    ctx.lineWidth=w*0.03;ctx.strokeStyle='#e8c778';ctx.beginPath();
+    const sw=t*0.6;ctx.arc(cx,cy,w*0.3,sw,sw+Math.PI*0.7);ctx.stroke();
+    // conductor line (gesture)
+    const ga=Math.sin(t*0.9)*0.6;
+    ctx.save();ctx.translate(w*0.26,h*0.66);ctx.rotate(ga);
+    ctx.strokeStyle='#3f7d78';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(w*0.22,0);ctx.stroke();
+    ctx.beginPath();ctx.arc(w*0.22,0,w*0.026,0,TAU);ctx.fillStyle='#c2683f';ctx.fill();ctx.restore();
+    // accent dots
+    [[0.2,0.22,'#e8c778'],[0.82,0.3,'#c2683f'],[0.6,0.74,'#efe6d4']].forEach(([px,py,c],i)=>{
+      const yy=py+Math.sin(t*0.7+i)*0.02;
+      ctx.beginPath();ctx.arc(w*px,h*yy,w*0.018,0,TAU);ctx.fillStyle=c;ctx.fill();
+    });
+  },
+
+  // 03 — Dada: stark asymmetric, a confident diagonal slice sweeping across the memory
+  dada(ctx,w,h,t){
+    const cx=w*0.52,cy=h*0.43;
+    // big off-center half-disc
+    ctx.save();ctx.translate(w*0.22,h*0.2);ctx.rotate(t*0.1);
+    ctx.beginPath();ctx.arc(0,0,w*0.26,0,Math.PI);ctx.fillStyle='rgba(168,67,31,.85)';ctx.fill();ctx.restore();
+    // memory
+    memory(ctx,cx,cy,w*0.2,t);
+    // diagonal SLICE that sweeps across, revealing/cutting
+    const sweep=(t*0.5)%2.4/2.4; // 0..1
+    const sx=-w*0.3+sweep*w*1.5;
+    ctx.save();
+    ctx.translate(sx,0);ctx.rotate(-0.5);
+    const gg=ctx.createLinearGradient(0,-h,0,h*2);
+    gg.addColorStop(0,'rgba(12,10,8,0)');gg.addColorStop(.5,'rgba(12,10,8,.96)');gg.addColorStop(1,'rgba(12,10,8,0)');
+    ctx.fillStyle=gg;ctx.fillRect(-w*0.12,-h,w*0.24,h*3);
+    // gold edge on the slice
+    ctx.fillStyle='rgba(217,138,60,.9)';ctx.fillRect(w*0.12,-h,2,h*3);
+    ctx.restore();
+    // a single bold line + shard
+    ctx.strokeStyle='#d98a3c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(w*0.12,h*0.78);ctx.lineTo(w*0.6,h*0.7);ctx.stroke();
+    ctx.save();ctx.translate(w*0.78,h*0.74);ctx.rotate(t*0.8);
+    ctx.beginPath();ctx.moveTo(0,-w*0.05);ctx.lineTo(w*0.05,w*0.04);ctx.lineTo(-w*0.05,w*0.04);ctx.closePath();
+    ctx.fillStyle='#e8c778';ctx.fill();ctx.restore();
+  }
+};
+
+const canvases=[...document.querySelectorAll('canvas')].map(cv=>{
+  const dim=fit(cv);return {cv,...dim,mode:cv.dataset.mode};
+});
+window.addEventListener('resize',()=>{canvases.forEach(o=>{const d=fit(o.cv);o.w=d.w;o.h=d.h;o.ctx=d.ctx;});});
+const t0=performance.now();
+function loop(now){
+  const t=(now-t0)/1000;
+  canvases.forEach(o=>{o.ctx.clearRect(0,0,o.w,o.h);renders[o.mode](o.ctx,o.w,o.h,t);});
+  requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

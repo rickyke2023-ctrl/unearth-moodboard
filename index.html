@@ -2,304 +2,439 @@
 <html lang="zh">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>UnearthPoem · 视觉语言三档</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>UnearthPoem · 高保真原型</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300&family=Noto+Serif+SC:wght@300;400;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;1,300;1,400&family=Noto+Serif+SC:wght@200;300;400;600&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --void:#0c0a08;
-    --void2:#15110c;
-    --cream:#efe6d4;
-    --gold:#e8c778;
-    --rust:#c2683f;
-    --clay:#b98a5e;
-    --ink:#9b8f7d;
-    --line:rgba(232,199,120,.16);
-  }
-  *{margin:0;padding:0;box-sizing:border-box}
-  html{scroll-behavior:smooth}
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;overflow:hidden}
   body{
-    background:
-      radial-gradient(120% 80% at 50% -10%, rgba(232,199,120,.07), transparent 60%),
-      radial-gradient(90% 60% at 50% 110%, rgba(194,104,63,.06), transparent 60%),
-      var(--void);
-    color:var(--cream);
-    font-family:"Noto Serif SC","Cormorant Garamond",serif;
-    min-height:100vh;
+    font-family:"Noto Serif SC",serif;
+    background:#000;color:var(--paper);
+    display:flex;align-items:center;justify-content:center;
     -webkit-font-smoothing:antialiased;
-    overflow-x:hidden;
   }
+
+  /* ---------- THEME TOKENS ---------- */
+  #app{
+    --bg:#0f0d0b; --bg2:#171109;
+    --paper:#efe6d4; --gold:#e8c778; --accent:#c2683f; --accent2:#3f7d78;
+    --ink:#9b8f7d; --radius:8px; --display:"Cormorant Garamond";
+  }
+  #app[data-theme="bauhaus"]{
+    --bg:#15110c; --bg2:#211810;
+    --paper:#efe6d4; --gold:#e8c778; --accent:#b98a5e; --accent2:#7d5a3c;
+    --ink:#a3937c; --radius:20px;
+  }
+  #app[data-theme="kandinsky"]{
+    --bg:#0f0d0b; --bg2:#1a1410;
+    --paper:#efe6d4; --gold:#e8c778; --accent:#c2683f; --accent2:#3f7d78;
+    --ink:#9b8f7d; --radius:7px;
+  }
+  #app[data-theme="dada"]{
+    --bg:#120d09; --bg2:#1c1008;
+    --paper:#f0e7d5; --gold:#d98a3c; --accent:#a8431f; --accent2:#2a2018;
+    --ink:#a89478; --radius:0px;
+  }
+
+  /* ---------- PHONE FRAME ---------- */
+  #app{
+    position:relative;width:100vw;height:100vh;max-width:430px;max-height:932px;
+    background:
+      radial-gradient(120% 70% at 50% -10%, color-mix(in srgb, var(--gold) 9%, transparent), transparent 60%),
+      radial-gradient(90% 60% at 50% 112%, color-mix(in srgb, var(--accent) 8%, transparent), transparent 60%),
+      var(--bg);
+    overflow:hidden;color:var(--paper);
+    transition:background .8s ease;
+    box-shadow:0 40px 120px rgba(0,0,0,.7);
+  }
+  @media(min-width:480px){#app{border-radius:42px;border:1px solid rgba(255,255,255,.06)}}
+
   /* grain */
-  body::after{
-    content:"";position:fixed;inset:0;pointer-events:none;z-index:9999;opacity:.045;
-    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
-    mix-blend-mode:overlay;
-  }
+  #app::after{content:"";position:absolute;inset:0;pointer-events:none;z-index:60;opacity:.05;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");mix-blend-mode:overlay}
 
-  header.intro{
-    max-width:1180px;margin:0 auto;padding:70px 32px 30px;
+  /* ---------- THEME SWITCHER ---------- */
+  #switcher{
+    position:absolute;top:14px;left:50%;transform:translateX(-50%);z-index:50;
+    display:flex;gap:2px;padding:3px;border-radius:30px;
+    background:rgba(0,0,0,.45);backdrop-filter:blur(14px);border:1px solid rgba(232,199,120,.18);
   }
-  .kicker{
-    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.42em;
-    text-transform:uppercase;color:var(--gold);opacity:.7;margin-bottom:22px;
+  #switcher button{
+    font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.08em;
+    color:var(--ink);background:none;border:none;padding:7px 11px;border-radius:24px;cursor:pointer;
+    transition:.3s;white-space:nowrap;
   }
-  h1{
-    font-family:"Cormorant Garamond",serif;font-weight:300;
-    font-size:clamp(34px,5vw,62px);line-height:1.04;letter-spacing:.01em;
-    color:var(--cream);margin-bottom:18px;
-  }
-  h1 em{font-style:italic;color:var(--gold)}
-  .lede{
-    font-weight:300;font-size:clamp(15px,1.5vw,18px);line-height:1.85;
-    color:var(--ink);max-width:680px;
-  }
-  .lede b{color:var(--clay);font-weight:400}
-  .axis{
-    display:flex;align-items:center;gap:16px;margin-top:30px;
-    font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.18em;color:var(--ink);
-  }
-  .axis .track{flex:1;height:1px;background:linear-gradient(90deg,var(--clay),var(--gold));max-width:320px;position:relative}
-  .axis .track::before,.axis .track::after{content:"";position:absolute;top:-2px;width:5px;height:5px;border-radius:50%;background:var(--gold)}
-  .axis .track::before{left:0}.axis .track::after{right:0}
+  #switcher button.on{background:var(--gold);color:#1a130a}
 
-  .grid{
-    max-width:1180px;margin:0 auto;padding:40px 24px 30px;
-    display:grid;grid-template-columns:repeat(3,1fr);gap:22px;
-  }
-  @media(max-width:880px){.grid{grid-template-columns:1fr;gap:34px}}
+  /* ---------- SCREENS ---------- */
+  .screen{position:absolute;inset:0;z-index:10;display:none;flex-direction:column;}
+  .screen.show{display:flex}
 
-  .panel{
-    position:relative;border:1px solid var(--line);border-radius:14px;
-    background:linear-gradient(180deg,rgba(255,255,255,.014),rgba(0,0,0,.12));
-    overflow:hidden;display:flex;flex-direction:column;
-    transition:transform .5s cubic-bezier(.2,.7,.2,1),border-color .5s;
-  }
-  .panel:hover{transform:translateY(-4px);border-color:rgba(232,199,120,.34)}
+  /* WELCOME */
+  #welcome{align-items:center;justify-content:flex-end}
+  #stage3d{position:absolute;inset:0;perspective:900px;overflow:hidden}
+  #field{position:absolute;inset:0;transform-style:preserve-3d;will-change:transform}
+  .mem{position:absolute;top:50%;left:50%;transform-style:preserve-3d;will-change:transform}
+  .mem .pic{width:100%;height:100%;object-fit:cover;display:block;border-radius:inherit}
+  /* theme-specific memory framing */
+  [data-theme="bauhaus"] .mem{border-radius:8px;background:#efe6d4;padding:6px 6px 16px;box-shadow:0 22px 44px rgba(0,0,0,.5)}
+  [data-theme="bauhaus"] .mem .pic{border-radius:3px}
+  [data-theme="kandinsky"] .mem{border-radius:3px;background:#1a1410;padding:3px;box-shadow:0 22px 44px rgba(0,0,0,.55),0 0 0 1px rgba(232,199,120,.25)}
+  [data-theme="dada"] .mem{border-radius:0;background:#f0e7d5;padding:4px 4px 4px;box-shadow:14px 18px 0 rgba(168,67,31,.5)}
 
-  .stage{position:relative;aspect-ratio:4/5;width:100%;background:radial-gradient(80% 70% at 50% 42%,rgba(232,199,120,.05),transparent 70%)}
-  canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  .welcome-title{position:relative;z-index:5;text-align:center;padding-bottom:70px}
+  .welcome-title .mark{font-family:var(--display);font-weight:300;letter-spacing:.42em;font-size:15px;color:var(--paper);opacity:.85;padding-left:.42em}
+  .welcome-title .hint{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.3em;color:var(--ink);margin-top:20px;animation:breathe 3.4s ease-in-out infinite}
+  @keyframes breathe{0%,100%{opacity:.3}50%{opacity:.7}}
+  .vgn{position:absolute;inset:0;z-index:4;pointer-events:none;
+    background:radial-gradient(60% 50% at 50% 46%, transparent, color-mix(in srgb,var(--bg) 78%, transparent) 78%)}
 
-  .meta{padding:22px 22px 26px;border-top:1px solid var(--line)}
-  .idx{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.3em;color:var(--gold);opacity:.65}
-  .pname{font-family:"Cormorant Garamond",serif;font-weight:400;font-size:27px;letter-spacing:.01em;color:var(--cream);margin:9px 0 3px}
-  .pcn{font-size:14px;color:var(--clay);letter-spacing:.16em;margin-bottom:14px}
-  .soul{font-weight:300;font-size:14px;line-height:1.8;color:var(--ink);min-height:76px}
-  .swatch{display:flex;gap:7px;margin:18px 0 16px}
-  .swatch span{width:26px;height:26px;border-radius:6px;box-shadow:inset 0 0 0 1px rgba(255,255,255,.08)}
-  .meter{display:flex;gap:5px;align-items:center;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.18em;color:var(--ink);text-transform:uppercase}
-  .dot{width:7px;height:7px;border-radius:50%;background:rgba(232,199,120,.18)}
-  .dot.on{background:var(--gold)}
-  .tag{margin-top:16px;display:flex;flex-direction:column;gap:7px}
-  .tag div{font-family:"IBM Plex Mono",monospace;font-size:10.5px;letter-spacing:.06em;color:var(--ink);line-height:1.5}
-  .tag b{color:var(--clay);font-weight:400}
+  /* COMPANION */
+  #companion{align-items:center;justify-content:center}
+  #spriteCanvas{position:absolute;inset:0;width:100%;height:100%}
+  .companion-cap{position:absolute;bottom:120px;left:0;right:0;text-align:center;z-index:5}
+  .companion-cap .t{font-family:var(--display);font-style:italic;font-weight:300;font-size:22px;color:var(--gold);opacity:.92}
+  .companion-cap .s{font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.34em;color:var(--ink);margin-top:14px}
 
-  .foot{max-width:1180px;margin:0 auto;padding:24px 32px 90px}
-  .principle{border-top:1px solid var(--line);padding-top:32px;display:grid;grid-template-columns:1fr 1fr;gap:40px}
-  @media(max-width:880px){.principle{grid-template-columns:1fr;gap:24px}}
-  .principle h3{font-family:"IBM Plex Mono",monospace;font-weight:400;font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold);opacity:.75;margin-bottom:16px}
-  .principle p{font-weight:300;font-size:15px;line-height:1.9;color:var(--ink)}
-  .principle p b{color:var(--cream);font-weight:400}
-  .sig{margin-top:40px;font-family:"IBM Plex Mono",monospace;font-size:10px;letter-spacing:.2em;color:var(--ink);opacity:.5}
+  /* PICKER */
+  #picker{padding:64px 0 0}
+  .pk-head{text-align:center;margin-bottom:6px}
+  .pk-head .tabs{display:flex;gap:26px;justify-content:center;font-family:var(--display);font-size:15px;letter-spacing:.18em}
+  .pk-head .tabs span{color:var(--ink);padding-bottom:6px;border-bottom:1px solid transparent}
+  .pk-head .tabs span.on{color:var(--gold);border-color:var(--gold)}
+  .pk-head .sub{font-family:"IBM Plex Mono",monospace;font-size:9px;letter-spacing:.24em;color:var(--ink);opacity:.6;margin-top:10px}
+  .grid{flex:1;overflow-y:auto;display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:14px 12px 120px;align-content:start}
+  .cell{position:relative;aspect-ratio:1;overflow:hidden;cursor:pointer;background:#000}
+  .cell img{width:100%;height:100%;object-fit:cover;display:block;transition:.3s}
+  .cell .chk{position:absolute;top:5px;right:5px;width:22px;height:22px;border-radius:50%;
+    background:var(--gold);color:#1a130a;display:none;align-items:center;justify-content:center;font-size:12px;font-weight:bold}
+  .cell.sel img{transform:scale(.9)}
+  .cell.sel{outline:2px solid var(--gold);outline-offset:-2px}
+  [data-theme="dada"] .cell.sel{outline-color:var(--accent)}
+  .cell.sel .chk{display:flex}
+  .start{position:absolute;bottom:28px;left:24px;right:24px;z-index:20;
+    padding:16px;text-align:center;border-radius:var(--radius);
+    background:var(--gold);color:#1a130a;font-family:var(--display);font-size:18px;letter-spacing:.1em;
+    cursor:pointer;opacity:0;transform:translateY(20px);transition:.4s;pointer-events:none}
+  .start.on{opacity:1;transform:none;pointer-events:auto}
+  [data-theme="dada"] .start{font-weight:400;letter-spacing:.24em;text-transform:uppercase;font-family:"IBM Plex Mono",monospace;font-size:13px}
+
+  /* GENERATING */
+  #generating{align-items:center;justify-content:flex-start}
+  .dev-wrap{position:relative;width:100%;height:64%;overflow:hidden}
+  .dev-photo{width:100%;height:100%;object-fit:cover;
+    filter:brightness(.05) saturate(0) blur(14px);transform:scale(1.08);transition:filter 4.4s ease, transform 9s ease}
+  .dev-photo.revealed{filter:brightness(1) saturate(1) blur(0);transform:scale(1.0)}
+  .dev-mask{position:absolute;inset:0;pointer-events:none;
+    background:radial-gradient(64% 60% at 50% 46%, transparent 40%, var(--bg) 92%)}
+  .poem-area{flex:1;width:100%;display:flex;align-items:center;justify-content:center;padding:6px 40px 80px;position:relative}
+  .poem{font-family:var(--display);font-weight:300;font-size:21px;line-height:2.05;letter-spacing:.06em;
+    text-align:center;color:var(--paper);white-space:pre-line}
+  [data-theme="dada"] .poem{text-align:left;letter-spacing:.02em}
+  .cursor{display:inline-block;width:.5em;color:var(--gold);animation:blink 1s steps(1) infinite}
+  @keyframes blink{50%{opacity:0}}
+  .tap-next{position:absolute;bottom:34px;left:0;right:0;text-align:center;
+    font-family:"IBM Plex Mono",monospace;font-size:9.5px;letter-spacing:.3em;color:var(--ink);
+    opacity:0;transition:.6s;animation:breathe 3s ease-in-out infinite}
+  .tap-next.on{opacity:.7}
+
+  /* MAGAZINE */
+  #magazine{align-items:center;justify-content:center;padding:60px 30px 40px}
+  .card{position:relative;width:100%;max-width:330px;background:var(--paper);
+    border-radius:var(--radius);overflow:hidden;box-shadow:0 40px 90px rgba(0,0,0,.6);
+    display:flex;flex-direction:column}
+  [data-theme="dada"] .card{box-shadow:18px 22px 0 var(--accent),0 40px 90px rgba(0,0,0,.5)}
+  .card .cimg{width:100%;aspect-ratio:4/5;object-fit:cover}
+  .card .cbody{padding:22px 24px 26px;position:relative}
+  .card .cpoem{font-family:var(--display);font-weight:400;font-size:16px;line-height:1.9;color:#2a2018;white-space:pre-line}
+  [data-theme="dada"] .card .cpoem{font-family:"Noto Serif SC";font-weight:400}
+  .card .cmeta{margin-top:16px;font-family:"IBM Plex Mono",monospace;font-size:8.5px;letter-spacing:.2em;color:#9c8a6e;display:flex;justify-content:space-between}
+  /* theme accents on card */
+  [data-theme="kandinsky"] .card .cbody::before{content:"";position:absolute;top:-20px;right:24px;width:40px;height:40px;border-radius:50%;border:2px solid var(--accent);background:radial-gradient(circle,var(--gold) 30%,transparent 32%)}
+  [data-theme="bauhaus"] .card .cbody::before{content:"";position:absolute;top:-14px;left:24px;width:30px;height:30px;border-radius:8px;background:var(--gold)}
+  [data-theme="dada"] .card .cbody::before{content:"";position:absolute;top:-8px;left:0;width:55%;height:8px;background:var(--accent)}
+  .mag-actions{display:flex;gap:14px;margin-top:30px}
+  .mag-actions button{font-family:"IBM Plex Mono",monospace;font-size:11px;letter-spacing:.16em;
+    padding:13px 22px;border-radius:var(--radius);cursor:pointer;border:1px solid var(--gold);
+    background:none;color:var(--gold);transition:.3s}
+  .mag-actions button.primary{background:var(--gold);color:#1a130a;border-color:var(--gold)}
+
+  /* ---------- CURTAIN (transitions) ---------- */
+  #curtain{position:absolute;inset:0;z-index:40;background:var(--bg);pointer-events:none;
+    clip-path:circle(0% at 50% 50%);will-change:clip-path,transform}
+  #curtain .seam{position:absolute;inset:0;opacity:0;
+    background:linear-gradient(90deg,transparent 49%,var(--gold) 50%,transparent 51%)}
+
+  .fadeable{transition:opacity .5s ease}
 </style>
 </head>
 <body>
+<div id="app" data-theme="kandinsky">
 
-<header class="intro">
-  <div class="kicker">Unearth&nbsp;·&nbsp;Visual Language Study</div>
-  <h1>三种<em>温暖的抽象</em><br>同一个灵魂，不同的胆量</h1>
-  <p class="lede">
-    用户导进来的，是他自己的照片——<b>那张照片本身就是最具象、最有温度的东西</b>。
-    所以 app 的外壳不必再去扮演具象，它的职责是当一个<b>温暖的抽象舞台</b>，把记忆托起、显影。
-    下面三档：温度恒定，抽象程度从左到右递进。看哪一格，开始从「邀请」变成「看不懂」。
-  </p>
-  <div class="axis">
-    <span>具象 · 安全</span>
-    <div class="track"></div>
-    <span>纯抽象 · 大胆</span>
+  <div id="switcher">
+    <button data-t="bauhaus">01 柔包豪斯</button>
+    <button data-t="kandinsky" class="on">02 康定斯基</button>
+    <button data-t="dada">03 达达</button>
   </div>
-</header>
 
-<section class="grid">
+  <!-- WELCOME -->
+  <section class="screen show" id="welcome">
+    <div id="stage3d"><div id="field"></div></div>
+    <div class="vgn"></div>
+    <div class="welcome-title">
+      <div class="mark">UNEARTH</div>
+      <div class="hint">TAP TO BEGIN</div>
+    </div>
+  </section>
 
-  <!-- A -->
-  <article class="panel">
-    <div class="stage"><canvas data-mode="bauhaus"></canvas></div>
-    <div class="meta">
-      <div class="idx">DIRECTION 01</div>
-      <div class="pname">Soft Bauhaus</div>
-      <div class="pcn">暖几何 · 柔包豪斯</div>
-      <div class="soul">圆、弧、柔方——能被一眼认出的原始几何，在暖金与陶土里缓缓呼吸。最像一份「礼物」，谁都不会被劝退。代价：差异化最弱，离烂大街最近。</div>
-      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#e8c778"></span><span style="background:#b98a5e"></span><span style="background:#7d5a3c"></span></div>
-      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot"></span><span class="dot"></span></div>
-      <div class="tag">
-        <div><b>触达</b> 最高·最安全·最暖</div>
-        <div><b>显影</b> 一个柔光圈缓缓张开，托住照片</div>
-        <div><b>风险</b> 不够独特，记忆点弱</div>
+  <!-- COMPANION -->
+  <section class="screen" id="companion">
+    <canvas id="spriteCanvas"></canvas>
+    <div class="companion-cap">
+      <div class="t">取一卷光，走进暗房</div>
+      <div class="s">TAP TO CONTINUE</div>
+    </div>
+  </section>
+
+  <!-- PICKER -->
+  <section class="screen" id="picker">
+    <div class="pk-head">
+      <div class="tabs"><span class="on">最近</span><span>收藏</span></div>
+      <div class="sub">每次最多选 5 张</div>
+    </div>
+    <div class="grid" id="grid"></div>
+    <div class="start" id="startBtn">开始</div>
+  </section>
+
+  <!-- GENERATING -->
+  <section class="screen" id="generating">
+    <div class="dev-wrap"><img class="dev-photo" id="devPhoto" alt=""><div class="dev-mask"></div></div>
+    <div class="poem-area"><div class="poem" id="poemEl"></div></div>
+    <div class="tap-next" id="tapNext">TAP TO CONTINUE</div>
+  </section>
+
+  <!-- MAGAZINE -->
+  <section class="screen" id="magazine">
+    <div class="card">
+      <img class="cimg" id="cardImg" alt="">
+      <div class="cbody">
+        <div class="cpoem" id="cardPoem"></div>
+        <div class="cmeta"><span>UNEARTH</span><span id="cardDate">06.04 · ON-DEVICE</span></div>
       </div>
     </div>
-  </article>
-
-  <!-- B -->
-  <article class="panel">
-    <div class="stage"><canvas data-mode="kandinsky"></canvas></div>
-    <div class="meta">
-      <div class="idx">DIRECTION 02</div>
-      <div class="pname">Lyrical Abstraction</div>
-      <div class="pcn">康定斯基 · 抒情抽象</div>
-      <div class="soul">点、线、弧、同心圆，像乐谱一样动态编排。一个元素当「指挥」，手势般摆动——这正是精灵该有的样子：不是脸，是有生命的几何手势。暖而有情绪，独特又不冷。</div>
-      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#e8c778"></span><span style="background:#c2683f"></span><span style="background:#3f7d78"></span></div>
-      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot on"></span><span class="dot"></span></div>
-      <div class="tag">
-        <div><b>触达</b> 高·情感可读·有记忆点</div>
-        <div><b>显影</b> 散乱的形聚拢、解析成画框</div>
-        <div><b>风险</b> 需要克制，否则会乱</div>
-      </div>
+    <div class="mag-actions">
+      <button id="againBtn">再来一张</button>
+      <button class="primary" id="saveBtn">保存卡片</button>
     </div>
-  </article>
+  </section>
 
-  <!-- C -->
-  <article class="panel">
-    <div class="stage"><canvas data-mode="dada"></canvas></div>
-    <div class="meta">
-      <div class="idx">DIRECTION 03</div>
-      <div class="pname">Dada Futurism</div>
-      <div class="pcn">达达 · 未来抽象</div>
-      <div class="soul">大胆、不对称、出其不意的并置，一道果断的「切」划过画面。最像画廊、最独特、最有未来感——也最冒险：普通人可能觉得酷，也可能觉得「这是啥」。你爱的半圆斜切，活在这里。</div>
-      <div class="swatch"><span style="background:#efe6d4"></span><span style="background:#d98a3c"></span><span style="background:#a8431f"></span><span style="background:#2a2018"></span></div>
-      <div class="meter">抽象度&nbsp;<span class="dot on"></span><span class="dot on"></span><span class="dot on"></span></div>
-      <div class="tag">
-        <div><b>触达</b> 较窄·靠酷感拉小红书</div>
-        <div><b>显影</b> 一道斜切扫过，照片被「裁」出来</div>
-        <div><b>风险</b> 大众理解门槛最高</div>
-      </div>
-    </div>
-  </article>
-
-</section>
-
-<footer class="foot">
-  <div class="principle">
-    <div>
-      <h3>为什么三档都成立</h3>
-      <p>劝退普通人的从来不是「抽象」，是「冷」。瑞士国际主义是抽象+冷；康定斯基/包豪斯/达达是抽象+暖。<b>这三档温度都恒定地暖</b>，只是大胆程度不同。普通人不需要「读懂」视觉语言，只需要「感受到」美和温度——情感可读，不是智识可读。</p>
-    </div>
-    <div>
-      <h3>共同的底层逻辑</h3>
-      <p><b>照片承担具象的情感，app 承担抽象的几何，各司其职。</b>用户看的是自己的照片和那首诗，不是来理解康定斯基。所以外壳越抽象越安全——因为情感锚点已经由用户自己提供了。三档的「显影」和「过渡」都从各自的几何语言里长出来，不再是字面拍立得。</p>
-    </div>
-  </div>
-  <div class="sig">UnearthPoem · 选一档作地基 · 定了即重建美学库 + 重设入场/精灵/过渡/卡片</div>
-</footer>
+  <div id="curtain"><div class="seam"></div></div>
+</div>
 
 <script>
 const TAU=Math.PI*2;
-function fit(cv){const d=window.devicePixelRatio||1;const r=cv.getBoundingClientRect();cv.width=r.width*d;cv.height=r.height*d;const x=cv.getContext('2d');x.setTransform(d,0,0,d,0,0);return {w:r.width,h:r.height,ctx:x};}
+const app=document.getElementById('app');
+const PHOTOS=[1,2,3,4,5,6,7,8,9,10,11,12].map(i=>`https://picsum.photos/seed/unearth${i}/500/500`);
+const BIG=i=>`https://picsum.photos/seed/unearth${i}/700/875`;
+const POEM="窗台上的光 慢慢挪了位置\n你低头看手机的样子\n被我留在了今天\n没有理由 只是想留着";
 
-// shared photo placeholder (a warm "memory")
-function memory(ctx,cx,cy,s,t){
-  const g=ctx.createLinearGradient(cx-s,cy-s,cx+s,cy+s);
-  g.addColorStop(0,'#caa06a');g.addColorStop(.55,'#9c6b4c');g.addColorStop(1,'#5d4436');
-  ctx.save();ctx.translate(cx,cy);ctx.beginPath();
-  const r=s*.12;rrect(ctx,-s,-s,s*2,s*2,r);ctx.fillStyle=g;ctx.fill();
-  const hl=ctx.createRadialGradient(-s*.4,-s*.5,2,-s*.4,-s*.5,s*1.4);
-  hl.addColorStop(0,'rgba(255,255,255,.18)');hl.addColorStop(1,'transparent');
-  ctx.fillStyle=hl;ctx.fill();ctx.restore();
+let theme='kandinsky';
+let selected=[];
+let busy=false;
+
+/* ---------------- THEME SWITCH ---------------- */
+document.querySelectorAll('#switcher button').forEach(b=>{
+  b.onclick=()=>{
+    theme=b.dataset.t;app.dataset.theme=theme;
+    document.querySelectorAll('#switcher button').forEach(x=>x.classList.toggle('on',x===b));
+    buildField();
+  };
+});
+
+/* ---------------- WELCOME: real 3D floating memories ---------------- */
+const field=document.getElementById('field');
+let memNodes=[];
+function buildField(){
+  field.innerHTML='';memNodes=[];
+  const N=9;
+  for(let i=0;i<N;i++){
+    const el=document.createElement('div');el.className='mem';
+    const z=-300+ (i/N)*520;                 // depth
+    const baseScale=(700+z)/700;
+    const w=120*baseScale;
+    el.style.width=w+'px';el.style.height=(w*1.24)+'px';
+    const img=document.createElement('img');img.className='pic';img.loading='lazy';
+    img.src=`https://picsum.photos/seed/welcome${i}/240/300`;
+    el.appendChild(img);field.appendChild(el);
+    memNodes.push({el,
+      x:(Math.random()*2-1)*150, y:(Math.random()*2-1)*300, z,
+      rot:(Math.random()*2-1)*16, phase:Math.random()*TAU, spd:.3+Math.random()*.4,
+      drift:18+Math.random()*22
+    });
+  }
 }
+buildField();
+
+/* ---------------- COMPANION SPRITE (canvas, per theme) ---------------- */
+const cv=document.getElementById('spriteCanvas');let cctx,cw,ch;
+function fitC(){const d=devicePixelRatio||1;const r=cv.getBoundingClientRect();cv.width=r.width*d;cv.height=r.height*d;cctx=cv.getContext('2d');cctx.setTransform(d,0,0,d,0,0);cw=r.width;ch=r.height;}
+addEventListener('resize',()=>{fitC();});
 function rrect(c,x,y,w,h,r){c.moveTo(x+r,y);c.arcTo(x+w,y,x+w,y+h,r);c.arcTo(x+w,y+h,x,y+h,r);c.arcTo(x,y+h,x,y,r);c.arcTo(x,y,x+w,y,r);c.closePath();}
 
-const renders={
-  // 01 — Soft Bauhaus: warm primary shapes orbit & breathe around the memory
-  bauhaus(ctx,w,h,t){
-    const cx=w/2,cy=h*.43;
-    const br=1+Math.sin(t*0.9)*0.04;
-    // soft halo
-    const halo=ctx.createRadialGradient(cx,cy,0,cx,cy,w*.5);
-    halo.addColorStop(0,'rgba(232,199,120,.10)');halo.addColorStop(1,'transparent');
-    ctx.fillStyle=halo;ctx.fillRect(0,0,w,h);
-    // orbiting shapes (behind)
-    const orb=[{a:0.0,col:'#e8c778',k:'circle',sz:.16},{a:2.1,col:'#b98a5e',k:'arc',sz:.2},{a:4.2,col:'#efe6d4',k:'square',sz:.12}];
-    orb.forEach((o,i)=>{
-      const ang=t*0.25+o.a, R=w*0.31;
-      const x=cx+Math.cos(ang)*R, y=cy+Math.sin(ang)*R*0.8;
-      ctx.save();ctx.translate(x,y);ctx.globalAlpha=.9;
-      if(o.k==='circle'){ctx.beginPath();ctx.arc(0,0,w*o.sz*br,0,TAU);ctx.fillStyle=o.col;ctx.fill();}
-      if(o.k==='square'){ctx.rotate(ang*0.4);ctx.beginPath();rrect(ctx,-w*o.sz,-w*o.sz,w*o.sz*2,w*o.sz*2,w*0.04);ctx.fillStyle=o.col;ctx.fill();}
-      if(o.k==='arc'){ctx.lineWidth=w*0.05;ctx.strokeStyle=o.col;ctx.beginPath();ctx.arc(0,0,w*o.sz,ang,ang+Math.PI*1.1);ctx.stroke();}
-      ctx.restore();
-    });
-    memory(ctx,cx,cy,w*0.2*br,t);
+const sprites={
+  bauhaus(x,t){const cx=cw/2,cy=ch*0.42;
+    const halo=x.createRadialGradient(cx,cy,0,cx,cy,180);halo.addColorStop(0,'rgba(232,199,120,.12)');halo.addColorStop(1,'transparent');x.fillStyle=halo;x.fillRect(0,0,cw,ch);
+    const shapes=[{a:0,c:'#e8c778',k:'circle'},{a:2.1,c:'#b98a5e',k:'arc'},{a:4.2,c:'#efe6d4',k:'square'}];
+    shapes.forEach(o=>{const ang=t*0.3+o.a,R=72;const px=cx+Math.cos(ang)*R,py=cy+Math.sin(ang)*R*0.85;
+      x.save();x.translate(px,py);
+      if(o.k==='circle'){x.beginPath();x.arc(0,0,30+Math.sin(t)*2,0,TAU);x.fillStyle=o.c;x.fill();}
+      if(o.k==='square'){x.rotate(ang*0.5);x.beginPath();rrect(x,-22,-22,44,44,8);x.fillStyle=o.c;x.fill();}
+      if(o.k==='arc'){x.lineWidth=11;x.strokeStyle=o.c;x.beginPath();x.arc(0,0,34,ang,ang+Math.PI*1.1);x.stroke();}
+      x.restore();});
+    x.beginPath();x.arc(cx,cy,26+Math.sin(t*0.9)*2,0,TAU);x.fillStyle='#efe6d4';x.fill();
   },
-
-  // 02 — Kandinsky: musical composition, a swinging "conductor" line, concentric pulses
-  kandinsky(ctx,w,h,t){
-    const cx=w*0.5,cy=h*0.43;
-    // concentric pulses
-    for(let i=0;i<4;i++){
-      const ph=(t*0.5+i*0.7)%2.6;const rr=ph/2.6;
-      ctx.beginPath();ctx.arc(w*0.32,h*0.3,w*0.05+rr*w*0.34,0,TAU);
-      ctx.strokeStyle=`rgba(232,199,120,${(1-rr)*0.4})`;ctx.lineWidth=1.2;ctx.stroke();
-    }
-    // radiating rays
-    ctx.save();ctx.translate(w*0.7,h*0.62);
-    for(let i=0;i<7;i++){const a=i/7*TAU+t*0.15;ctx.strokeStyle='rgba(194,104,63,.5)';ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(Math.cos(a)*w*0.18,Math.sin(a)*w*0.18);ctx.stroke();}
-    ctx.restore();
-    // the memory tile, slightly rotated
-    ctx.save();ctx.translate(cx,cy);ctx.rotate(Math.sin(t*0.4)*0.04);memory(ctx,0,0,w*0.17,t);ctx.restore();
-    // bold sweeping arc
-    ctx.lineWidth=w*0.03;ctx.strokeStyle='#e8c778';ctx.beginPath();
-    const sw=t*0.6;ctx.arc(cx,cy,w*0.3,sw,sw+Math.PI*0.7);ctx.stroke();
-    // conductor line (gesture)
-    const ga=Math.sin(t*0.9)*0.6;
-    ctx.save();ctx.translate(w*0.26,h*0.66);ctx.rotate(ga);
-    ctx.strokeStyle='#3f7d78';ctx.lineWidth=2.2;ctx.beginPath();ctx.moveTo(0,0);ctx.lineTo(w*0.22,0);ctx.stroke();
-    ctx.beginPath();ctx.arc(w*0.22,0,w*0.026,0,TAU);ctx.fillStyle='#c2683f';ctx.fill();ctx.restore();
-    // accent dots
-    [[0.2,0.22,'#e8c778'],[0.82,0.3,'#c2683f'],[0.6,0.74,'#efe6d4']].forEach(([px,py,c],i)=>{
-      const yy=py+Math.sin(t*0.7+i)*0.02;
-      ctx.beginPath();ctx.arc(w*px,h*yy,w*0.018,0,TAU);ctx.fillStyle=c;ctx.fill();
-    });
+  kandinsky(x,t){const cx=cw/2,cy=ch*0.42;
+    for(let i=0;i<4;i++){const ph=(t*0.5+i*0.7)%2.6,rr=ph/2.6;x.beginPath();x.arc(cx-46,cy-30,8+rr*70,0,TAU);x.strokeStyle=`rgba(232,199,120,${(1-rr)*.45})`;x.lineWidth=1.3;x.stroke();}
+    x.save();x.translate(cx+58,cy+44);for(let i=0;i<7;i++){const a=i/7*TAU+t*.2;x.strokeStyle='rgba(194,104,63,.55)';x.lineWidth=1.1;x.beginPath();x.moveTo(0,0);x.lineTo(Math.cos(a)*34,Math.sin(a)*34);x.stroke();}x.restore();
+    x.lineWidth=12;x.strokeStyle='#e8c778';x.beginPath();const sw=t*0.6;x.arc(cx,cy,52,sw,sw+Math.PI*0.7);x.stroke();
+    const ga=Math.sin(t*0.95)*0.65;x.save();x.translate(cx-60,cy+50);x.rotate(ga);
+    x.strokeStyle='#3f7d78';x.lineWidth=2.6;x.beginPath();x.moveTo(0,0);x.lineTo(60,0);x.stroke();
+    x.beginPath();x.arc(60,0,7,0,TAU);x.fillStyle='#c2683f';x.fill();x.restore();
+    [[cx-70,cy-58,'#e8c778'],[cx+66,cy-40,'#c2683f'],[cx+8,cy+70,'#efe6d4']].forEach((p,i)=>{x.beginPath();x.arc(p[0],p[1]+Math.sin(t*.7+i)*5,5,0,TAU);x.fillStyle=p[2];x.fill();});
+    x.beginPath();x.arc(cx,cy,8,0,TAU);x.fillStyle='#efe6d4';x.fill();
   },
-
-  // 03 — Dada: stark asymmetric, a confident diagonal slice sweeping across the memory
-  dada(ctx,w,h,t){
-    const cx=w*0.52,cy=h*0.43;
-    // big off-center half-disc
-    ctx.save();ctx.translate(w*0.22,h*0.2);ctx.rotate(t*0.1);
-    ctx.beginPath();ctx.arc(0,0,w*0.26,0,Math.PI);ctx.fillStyle='rgba(168,67,31,.85)';ctx.fill();ctx.restore();
-    // memory
-    memory(ctx,cx,cy,w*0.2,t);
-    // diagonal SLICE that sweeps across, revealing/cutting
-    const sweep=(t*0.5)%2.4/2.4; // 0..1
-    const sx=-w*0.3+sweep*w*1.5;
-    ctx.save();
-    ctx.translate(sx,0);ctx.rotate(-0.5);
-    const gg=ctx.createLinearGradient(0,-h,0,h*2);
-    gg.addColorStop(0,'rgba(12,10,8,0)');gg.addColorStop(.5,'rgba(12,10,8,.96)');gg.addColorStop(1,'rgba(12,10,8,0)');
-    ctx.fillStyle=gg;ctx.fillRect(-w*0.12,-h,w*0.24,h*3);
-    // gold edge on the slice
-    ctx.fillStyle='rgba(217,138,60,.9)';ctx.fillRect(w*0.12,-h,2,h*3);
-    ctx.restore();
-    // a single bold line + shard
-    ctx.strokeStyle='#d98a3c';ctx.lineWidth=3;ctx.beginPath();ctx.moveTo(w*0.12,h*0.78);ctx.lineTo(w*0.6,h*0.7);ctx.stroke();
-    ctx.save();ctx.translate(w*0.78,h*0.74);ctx.rotate(t*0.8);
-    ctx.beginPath();ctx.moveTo(0,-w*0.05);ctx.lineTo(w*0.05,w*0.04);ctx.lineTo(-w*0.05,w*0.04);ctx.closePath();
-    ctx.fillStyle='#e8c778';ctx.fill();ctx.restore();
+  dada(x,t){const cx=cw/2,cy=ch*0.42;
+    x.save();x.translate(cx-70,cy-66);x.rotate(t*0.12);x.beginPath();x.arc(0,0,60,0,Math.PI);x.fillStyle='rgba(168,67,31,.85)';x.fill();x.restore();
+    x.fillStyle='#d98a3c';x.save();x.translate(cx,cy);x.rotate(Math.sin(t*0.5)*0.2);x.fillRect(-44,-44,88,88);x.restore();
+    x.strokeStyle='#f0e7d5';x.lineWidth=3;x.beginPath();x.moveTo(cx-90,cy+78);x.lineTo(cx+60,cy+58);x.stroke();
+    x.save();x.translate(cx+70,cy+30);x.rotate(t*0.9);x.beginPath();x.moveTo(0,-26);x.lineTo(24,20);x.lineTo(-24,20);x.closePath();x.fillStyle='#e8c778';x.fill();x.restore();
+    const sweep=(t*0.4)%3/3;x.save();x.globalAlpha=.9;x.translate(-cw*0.2+sweep*cw*1.4,0);x.rotate(-0.5);x.fillStyle='rgba(217,138,60,.9)';x.fillRect(0,-ch,2,ch*3);x.restore();
   }
 };
 
-const canvases=[...document.querySelectorAll('canvas')].map(cv=>{
-  const dim=fit(cv);return {cv,...dim,mode:cv.dataset.mode};
-});
-window.addEventListener('resize',()=>{canvases.forEach(o=>{const d=fit(o.cv);o.w=d.w;o.h=d.h;o.ctx=d.ctx;});});
+/* ---------------- ANIM LOOP ---------------- */
 const t0=performance.now();
 function loop(now){
   const t=(now-t0)/1000;
-  canvases.forEach(o=>{o.ctx.clearRect(0,0,o.w,o.h);renders[o.mode](o.ctx,o.w,o.h,t);});
+  // welcome 3D parallax
+  if(document.getElementById('welcome').classList.contains('show')){
+    const sway=Math.sin(t*0.25)*7, tilt=Math.cos(t*0.2)*4;
+    field.style.transform=`rotateY(${sway}deg) rotateX(${tilt}deg)`;
+    memNodes.forEach(m=>{
+      const yy=m.y+Math.sin(t*m.spd+m.phase)*m.drift;
+      const xx=m.x+Math.cos(t*m.spd*0.8+m.phase)*m.drift*0.5;
+      m.el.style.transform=`translate(-50%,-50%) translate3d(${xx}px,${yy}px,${m.z}px) rotateZ(${m.rot}deg)`;
+      m.el.style.zIndex=Math.round(500+m.z);
+      m.el.style.filter=`brightness(${0.5+ (m.z+300)/820*0.7}) blur(${Math.max(0,(-m.z)/120)}px)`;
+    });
+  }
+  // companion sprite
+  if(document.getElementById('companion').classList.contains('show')&&cctx){
+    cctx.clearRect(0,0,cw,ch);(sprites[theme]||sprites.kandinsky)(cctx,t);
+  }
   requestAnimationFrame(loop);
 }
-requestAnimationFrame(loop);
+fitC();requestAnimationFrame(loop);
+
+/* ---------------- NAV + TRANSITIONS ---------------- */
+const curtain=document.getElementById('curtain');
+const seam=curtain.querySelector('.seam');
+function screenEl(id){return document.getElementById(id);}
+function showOnly(id){document.querySelectorAll('.screen').forEach(s=>s.classList.toggle('show',s.id===id));}
+
+function coverIn(){
+  return new Promise(res=>{
+    let kf,opt={duration:560,easing:'cubic-bezier(.5,0,.3,1)',fill:'forwards'};
+    if(theme==='bauhaus'){kf=[{clipPath:'circle(0% at 50% 50%)'},{clipPath:'circle(150% at 50% 50%)'}];}
+    else if(theme==='dada'){curtain.style.clipPath='none';kf=[{transform:'translateX(-130%) skewX(-12deg)'},{transform:'translateX(0%) skewX(-12deg)'}];curtain.style.width='150%';curtain.style.left='-25%';}
+    else{kf=[{clipPath:'circle(0% at 50% 50%)',transform:'rotate(0deg)'},{clipPath:'circle(150% at 50% 50%)',transform:'rotate(25deg)'}];seam.animate([{opacity:0},{opacity:.8}],{duration:560,fill:'forwards'});}
+    const a=curtain.animate(kf,opt);a.onfinish=res;
+  });
+}
+function revealOut(){
+  return new Promise(res=>{
+    let kf,opt={duration:680,easing:'cubic-bezier(.5,0,.2,1)',fill:'forwards'};
+    if(theme==='bauhaus'){kf=[{clipPath:'circle(150% at 50% 50%)'},{clipPath:'circle(0% at 50% 50%)'}];}
+    else if(theme==='dada'){kf=[{transform:'translateX(0%) skewX(-12deg)'},{transform:'translateX(130%) skewX(-12deg)'}];}
+    else{kf=[{clipPath:'circle(150% at 50% 50%)',transform:'rotate(25deg)'},{clipPath:'circle(0% at 50% 50%)',transform:'rotate(0deg)'}];seam.animate([{opacity:.8},{opacity:0}],{duration:680,fill:'forwards'});}
+    const a=curtain.animate(kf,opt);a.onfinish=()=>{
+      curtain.style.transform='';curtain.style.width='';curtain.style.left='';curtain.style.clipPath='circle(0% at 50% 50%)';res();
+    };
+  });
+}
+async function go(id,prep){
+  if(busy)return;busy=true;
+  await coverIn();
+  showOnly(id);if(prep)prep();
+  await new Promise(r=>setTimeout(r,120));
+  await revealOut();
+  busy=false;
+}
+
+/* welcome -> companion */
+screenEl('welcome').onclick=()=>go('companion');
+/* companion -> picker */
+screenEl('companion').onclick=()=>go('picker',buildGrid);
+/* generating tap -> magazine (only after poem done) */
+let poemDone=false;
+screenEl('generating').onclick=()=>{if(poemDone)go('magazine',fillCard);};
+
+/* ---------------- PICKER ---------------- */
+const grid=document.getElementById('grid');
+const startBtn=document.getElementById('startBtn');
+function buildGrid(){
+  grid.innerHTML='';selected=[];startBtn.classList.remove('on');
+  PHOTOS.forEach((src,i)=>{
+    const c=document.createElement('div');c.className='cell';
+    c.innerHTML=`<img src="${src}" loading="lazy"><div class="chk">✓</div>`;
+    c.onclick=()=>{
+      const idx=selected.indexOf(i);
+      if(idx>=0){selected.splice(idx,1);c.classList.remove('sel');}
+      else if(selected.length<5){selected.push(i);c.classList.add('sel');}
+      startBtn.classList.toggle('on',selected.length>0);
+      startBtn.textContent= theme==='dada' ? `START (${selected.length})` : `开始 (${selected.length}/5)`;
+    };
+    grid.appendChild(c);
+  });
+}
+startBtn.onclick=()=>{if(selected.length)go('generating',runDevelop);};
+
+/* ---------------- GENERATING ---------------- */
+const devPhoto=document.getElementById('devPhoto');
+const poemEl=document.getElementById('poemEl');
+const tapNext=document.getElementById('tapNext');
+let typeTimer;
+function runDevelop(){
+  poemDone=false;clearTimeout(typeTimer);
+  tapNext.classList.remove('on');
+  const pick=selected[0]!==undefined?selected[0]+1:1;
+  devPhoto.classList.remove('revealed');
+  devPhoto.src=BIG(pick);
+  poemEl.innerHTML='<span class="cursor">▍</span>';
+  requestAnimationFrame(()=>requestAnimationFrame(()=>devPhoto.classList.add('revealed')));
+  setTimeout(typePoem,1700);
+}
+function typePoem(){
+  let i=0;const txt=POEM;
+  (function step(){
+    poemEl.innerHTML=txt.slice(0,i)+'<span class="cursor">▍</span>';
+    i++;
+    if(i<=txt.length){typeTimer=setTimeout(step,118);}
+    else{poemEl.innerHTML=txt;poemDone=true;tapNext.classList.add('on');}
+  })();
+}
+
+/* ---------------- MAGAZINE ---------------- */
+function fillCard(){
+  const pick=selected[0]!==undefined?selected[0]+1:1;
+  document.getElementById('cardImg').src=BIG(pick);
+  document.getElementById('cardPoem').textContent=POEM;
+}
+document.getElementById('againBtn').onclick=()=>go('welcome');
+document.getElementById('saveBtn').onclick=function(){this.textContent='✓ 已保存';setTimeout(()=>this.textContent='保存卡片',1600);};
 </script>
 </body>
 </html>
